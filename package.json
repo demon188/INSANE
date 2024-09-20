@@ -1,0 +1,39 @@
+{
+  "name": "selfbot-frame",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.5",
+    "axios-retry": "^4.5.0",
+    "canvas": "^2.11.2",
+    "discord-emoji": "^2.4.0",
+    "discord.js": "^14.16.2",
+    "discord.js-selfbot-v13": "^2.15.0",
+    "discordrpcgenerator": "^1.2.0",
+    "extract-links": "^1.0.1",
+    "face-api.js": "^0.22.2",
+    "figlet": "^1.7.0",
+    "free-chatgpt-3.5-turbo-api": "^1.0.2",
+    "g4f": "^1.4.6",
+    "gif-encoder-2": "^1.0.5",
+    "google-translate-api-x": "^10.7.1",
+    "i": "^0.3.7",
+    "kyz": "^0.0.5",
+    "lottie-node": "^2.0.0",
+    "npm": "^10.8.3",
+    "one-liner-joke": "^1.2.2",
+    "openai": "^3.3.0",
+    "path": "^0.12.7",
+    "react-native-tts": "^4.1.1",
+    "say": "^0.16.0",
+    "sequelize": "^6.35.2",
+    "sharp": "^0.33.5",
+    "sqlite3": "^5.1.7-rc.0"
+  }
+}
