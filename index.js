@@ -4,6 +4,18 @@ const { Client } = require('discord.js-selfbot-v13');
 const Discord = require('discord.js-selfbot-v13');
 const { Appembed } = require('kyz');
 const Sequelize = require('sequelize');
+const express = require('express');
+const app = express();
+const port = 3001;
+
+app.get('/', (req, res) => {
+  res.send('stfu bitch');
+});
+
+app.listen(port, () => {
+  console.log(`Server is running on port ${port}`);
+});
+
 
 let config = {};
 
