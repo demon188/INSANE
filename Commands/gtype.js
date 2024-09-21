@@ -30,9 +30,6 @@ module.exports = {
                 const totalFrames = text.length * 2 + 10; // Additional frames for full text display and pause
                 const tempGifPath = path.join(__dirname, 'temp_gtype.gif');
 
-                // Customizable background color
-                const backgroundColor = '#1C1D22'; // Default black background, replace this value as needed
-
                 const canvas = createCanvas(canvasWidth, canvasHeight);
                 const ctx = canvas.getContext('2d');
                 const encoder = new GifEncoder(canvasWidth, canvasHeight);
@@ -49,13 +46,6 @@ module.exports = {
                 // Typewriter effect frames
                 for (let i = 0; i < text.length * 2; i++) {
                     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-                    
-                    // Set the background color for each frame
-                    ctx.fillStyle = backgroundColor;
-                    ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-
-                    // Draw the current text
-                    ctx.fillStyle = 'white'; // Text color
                     const currentText = text.slice(0, Math.floor(i / 2));
                     ctx.fillText(currentText, leftMargin, 10);
                     encoder.addFrame(ctx);
@@ -63,9 +53,6 @@ module.exports = {
 
                 // Full text display frame
                 ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-                ctx.fillStyle = backgroundColor;
-                ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-                ctx.fillStyle = 'white';
                 ctx.fillText(text, leftMargin, 10);
                 for (let i = 0; i < 10; i++) { // Show full text for a short duration
                     encoder.addFrame(ctx);

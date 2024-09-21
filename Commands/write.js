@@ -8,60 +8,91 @@ module.exports = {
     description: 'Writes any text on an image with different font styles',
 
     run: async (client, message, args) => {
+        // Function to break text into lines with a max length of 30 characters without breaking words
+        function wrapText(text, maxLineLength = 30) {
+            const words = text.split(' ');
+            let lines = [];
+            let currentLine = '';
+
+            for (let word of words) {
+                // Check if adding the word exceeds the max line length
+                if ((currentLine + word).length <= maxLineLength) {
+                    currentLine += (currentLine ? ' ' : '') + word; // Add the word to the current line
+                } else {
+                    lines.push(currentLine); // Push the current line to the lines array
+                    currentLine = word; // Start a new line with the current word
+                }
+            }
+
+            // Add the last line if it exists
+            if (currentLine) {
+                lines.push(currentLine);
+            }
+
+            return lines.join('\n'); // Join the lines with a newline character
+        }
+
         // Extract the font style and text
         const input = args.join(' ').split(' ');
-        const fontKey = input[0].toUpperCase();
+        const fontKey = input[0].toUpperCase(); // SH, NH, CH, etc.
         const fontSize = 27; // Font size
         const yAxisMargin = 165; // Y-axis margin
         const lineGap = 13; // Line gap
-        const text = args.slice(0).join(' '); // The rest of the input is the text
 
         // Define fonts and styles with font size
         const fontData = {
-            NH: { url: 'https://github.com/Hex231/Res/blob/main/TalkingToTheMoon.ttf?raw=true', size: fontSize },
-            CH: { url: 'https://github.com/Hex231/Res/blob/main/Mumsies.ttf?raw=true', size: fontSize },
-            SH: { url: 'https://github.com/Hex231/Res/blob/main/Always%20In%20My%20Heart.ttf?raw=true', size: fontSize },
-            FH: { url: 'https://github.com/Hex231/Res/blob/main/Husband%20of%20the%20Millennium.ttf?raw=true', size: fontSize },
-            UH: { url: 'https://github.com/Hex231/Res/blob/main/Quikhand.ttf?raw=true', size: fontSize },
+            NH: { path: path.join(__dirname, './temp/NH.ttf'), size: fontSize },
+            CH: { path: path.join(__dirname, './temp/CH.ttf'), size: fontSize },
+            SH: { path: path.join(__dirname, './temp/SH.ttf'), size: fontSize },
+            FH: { path: path.join(__dirname, './temp/FH.ttf'), size: fontSize },
+            UH: { path: path.join(__dirname, './temp/UH.ttf'), size: fontSize },
         };
 
         const templateUrl = 'https://raw.githubusercontent.com/Hex231/Res/main/template.jpg';
 
-        // Validate input
-        if (!text) {
+        // Validate inpu
+        await message.edit('✌️');
+        
+        // Select the font, defaulting to 'NH' if no valid style is provided
+        const selectedFont = fontData[fontKey] || fontData['NH'];
+        
+
+        // Adjust the text if an invalid font is provided and 'NH' is used as default
+         rawText = fontData[fontKey]
+            ? args.slice(1).join(' ')  // Use text excluding the font key if a valid font is selected
+            : args.slice(0).join(' '); // Use all arguments if an invalid font key defaults to 'NH'
+      
+        if (!rawText.length) {
+        if (message.reference) {
+            const referencedMessage = await message.channel.messages.fetch(message.reference.messageId);
+            rawText = referencedMessage.content + `\n\n --${referencedMessage.member ? referencedMessage.member.displayName : "SOMEONE"}`;
+        } else {
             return console.log('Please provide some text to write on the image.');
         }
-        message.edit('✌️');
-        const selectedFont = fontData[fontKey] || fontData['NH']; // Default to 'NH' if no style provided
+       };
+
+        // Wrap the text to have lines of about 30 characters each
+        const text = wrapText(rawText, 30);
 
         // Ensure temp directory exists
         if (!fs.existsSync('./temp')) {
             fs.mkdirSync('./temp');
         }
 
-        // Download the font if it doesn't exist
-        const fontPath = path.join(__dirname, './temp/QEDSFont.ttf');
-        if (!fs.existsSync(fontPath)) {
-            try {
-                const response = await axios({
-                    url: selectedFont.url,
-                    responseType: 'arraybuffer',
-                });
-                fs.writeFileSync(fontPath, Buffer.from(response.data), 'binary');
-                console.log('Font downloaded successfully.');
-            } catch (err) {
-                console.error('Error downloading font:', err);
-                return //message.chhane('Failed to download font.');
-            }
+        // Check if the selected font exists locally
+        if (!fs.existsSync(selectedFont.path)) {
+            console.error('Font file does not exist:', selectedFont.path);
+            return;
         }
 
-        // Register the font for canvas
+        // Unlink previous fonts and register the new one
         try {
-            registerFont(fontPath, { family: 'CustoFont' });
-            console.log('Font registered successfully.');
+            deregisterAllFonts(); // Unlink any previously registered fonts
+            registerFont(selectedFont.path, { family: 'CustoFont' });
+            console.log('Font registered successfully:', selectedFont.path);
         } catch (err) {
             console.error('Error registering font:', err);
-            return //message.reply('Failed to register font.');
+            return; // Stop execution if font registration fails
         }
 
         // Download the template image
@@ -76,7 +107,7 @@ module.exports = {
                 console.log('Image downloaded successfully.');
             } catch (err) {
                 console.error('Error downloading image:', err);
-                return //message.reply('Failed to download image.');
+                return; // message.reply('Failed to download image.');
             }
         }
 
@@ -108,19 +139,17 @@ module.exports = {
             fs.writeFileSync(outputFilePath, buffer);
 
             // Send the image back to the channel
-            await message.channel.send({ files: [outputFilePath],content: `${message.mentions.users.first() ? message.mentions.users.first() : "chat"}` });
+            await message.channel.send({ files: [outputFilePath], content: `${message.mentions.users.first() ? message.mentions.users.first() : "chat"}` });
 
         } catch (err) {
             console.error('Error processing image:', err);
-            return //message.reply('Failed to process image.');
+            return; // message.reply('Failed to process image.');
         }
 
         // Cleanup temp files
         try {
             await fs.promises.unlink(outputFilePath);
             console.log('Output file deleted successfully.');
-            // Uncomment these lines if needed
-            // await fs.promises.unlink(fontPath);
         } catch (err) {
             console.error('Error during file cleanup:', err);
         }
