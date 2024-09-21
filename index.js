@@ -4,6 +4,7 @@ const { Client } = require('discord.js-selfbot-v13');
 const Discord = require('discord.js-selfbot-v13');
 const { Appembed } = require('kyz');
 const Sequelize = require('sequelize');
+require('dotenv').config();
 const express = require('express');
 const app = express();
 const port = 3001;
@@ -90,7 +91,7 @@ const sequelize = new Sequelize("database", "username", "password", {
       const commandName = handler.shift().toLowerCase();
       const command = client.commands.get(commandName);
       if (!command) return;
-      command.run(client, message, handler, prefix, config.token, client.user.id, "Discord", "Util", "AutoDelete", "thingy", "xToken");
+      command.run(client, message, handler, prefix, process.env.DISCORD_TOKEN, client.user.id, "Discord", "Util", "AutoDelete", "thingy", "xToken");
     } else {
       return void(0);
     }
@@ -340,4 +341,4 @@ const sequelize = new Sequelize("database", "username", "password", {
   }
   });
 
-  client.login(config.token)
+  client.login(process.env.DISCORD_TOKEN)
