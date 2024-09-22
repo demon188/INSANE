@@ -60,7 +60,7 @@ module.exports = {
                 }
 
                 if (!imageUrl) {
-                    return console.log('No image or sticker found in the reference message.');
+                    return console.log('No image or sticker,, found in the reference message.');
                 }
             }
 
