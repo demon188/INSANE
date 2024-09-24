@@ -23,7 +23,7 @@ module.exports = {
                 B = commandContent.slice(vsIndex + 4).trim();
             } else if (commandContent.length > 0) {
                 B = commandContent; // If only one name/emoji is provided, it goes to B
-                A = `${message.mentions.users.first() ? message.mentions.users.first() : message.author}`;
+                //A = `${message.mentions.users.first() ? message.mentions.users.first() : message.author}`;
             }
 
             const args = message.content.split(' ').slice(1);
