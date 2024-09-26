@@ -25,7 +25,7 @@ ${message.content.substring(4)}'s PP size:
             } else {
                 const randomLength = Math.floor(Math.random() * 25) + 24; // Generate random length between 24 and 48
                 const equals = '='.repeat(randomLength);
-                message.reply(`${message.content.substring(4)}'s PP size:
+                message.reply(`${referencedMessage.member ? referencedMessage.member.displayName : "x"}'s PP size:
 8${equals}D
       `);
             }
