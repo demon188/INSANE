@@ -1,38 +1,74 @@
-const fs = require('fs');
-let config = {};
-
-if (fs.existsSync('config.json')) {
-    config = JSON.parse(fs.readFileSync('config.json'));
-}
-
 module.exports = {
-    description: 'https://appembed.netlify.app/e?description=Type%20VARPurge%20%2250%22%20to%20purge%20the%20last%2050%20messages%20in%20the%20channel%20sent%20by%20you&redirect=&provider=TonyskalYTs%20selfbot&author=VARPurge%20(amount)&image=&color=%23FF0000',
+    description: 'Purge the selected message and all messages after it in a server',
+
     run: async (client, message, handler, prefix) => {
-        if (!message.content.toLowerCase().startsWith(`${prefix}purge`)) return;
-        let matches = message.content.match(/\d+|"([^"]*)"/g);
-        message.react(config.successEmoji).catch(err => message.react('👍').catch(e => console.log(e)));
-        let end = false;
-        if (matches) {
-            let [n] = matches.map(v => v.replace(/"/g));
-            await async function() {
-                for (let i = -1; i < n; i++) {
-                    await message.channel.messages.fetch({
-                        limit: 100
-                    }).then(async messages => {
-                        messages = messages.filter(msg => msg.author.id === `${message.author.id}`);
-                        if (messages.size > 0) {
-                            try {
-                                await messages.first().delete();
-                            } catch (error) {
-                                i--;
-                                console.log(error);
-                            }
-                        }
-                    });
-                    if (end) break;
+        try {
+            const args = message.content.slice(prefix.length).trim().split(/ +/);
+            const command = args.shift().toLowerCase();
+
+            if (command === 'purge') {
+                if (!message.reference) {
+                    return console.log('Please reply to a message to start purging.');
                 }
-            }();
+
+                // Fetch the selected message to purge
+                const targetMessageId = message.reference.messageId;
+                const targetMessage = await message.channel.messages.fetch(targetMessageId);
+
+                if (targetMessage.author.id !== message.author.id) {
+                    return console.log("You can only purge your own messages.");
+                }
+
+                // Include the selected message in the deletion process
+                let lastMessageId = targetMessageId;
+                let purgedCount = 0; // Initialize the message count
+
+                // Delete the selected message first
+                await targetMessage.delete()
+                    .then(() => {
+                        purgedCount++; // Increase the count for the deleted message
+                    })
+                    .catch(error => console.error(`Failed to delete the selected message: ${targetMessageId}`, error));
+
+                // Start purging messages after the selected message
+                while (true) {
+                    // Fetch messages after the last known message
+                    const fetchedMessages = await message.channel.messages.fetch({
+                        after: lastMessageId,
+                        limit: 100, // Fetch in batches of 100 messages
+                    });
+
+                    // Filter messages that belong to the user (you)
+                    const userMessages = fetchedMessages.filter(msg => msg.author.id === message.author.id);
+
+                    // If no more user messages are found, break out of the loop
+                    if (userMessages.size === 0) {
+                        break;
+                    }
+
+                    // Delete all user messages
+                    for (const msg of userMessages.values()) {
+                        await msg.delete()
+                            .then(() => {
+                                purgedCount++; // Increase the count for each deleted message
+                            })
+                            .catch(error => console.error(`Failed to delete message: ${msg.id}`, error));
+                    }
+
+                    // Update the lastMessageId for the next fetch
+                    lastMessageId = fetchedMessages.last().id;
+
+                    // If fewer than 100 messages were fetched, we've likely reached the end of the channel
+                    if (fetchedMessages.size < 100) {
+                        break;
+                    }
+                }
+
+                // Log the total number of purged messages
+                return message.channel.send(`${purgedCount} messages purged.`);
+            }
+        } catch (error) {
+            console.error('An error occurred during the purge process:', error);
         }
-        if (message.content.toLowerCase() === `${prefix}purgeend`) end = true;
     }
-}
+};
