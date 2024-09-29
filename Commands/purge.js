@@ -10,7 +10,7 @@ module.exports = {
                 if (!message.reference) {
                     return console.log('Please reply to a message to start purging.');
                 }
-
+                message.edit("Purging....")
                 // Fetch the selected message to purge
                 const targetMessageId = message.reference.messageId;
                 const targetMessage = await message.channel.messages.fetch(targetMessageId);
