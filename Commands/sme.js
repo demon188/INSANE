@@ -20,7 +20,7 @@ module.exports = {
             const command = args.shift().toLowerCase();
             
             // Stop the ongoing process
-            if (command === 'sma' && args[0] === 'stop') {
+            if (command === 'sme' && args[0] === 'stop') {
                 clearInterval(intervalId);
                 return console.log("Editing process stopped.");
             }
