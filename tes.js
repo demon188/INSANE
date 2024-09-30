@@ -1,61 +1,60 @@
-// Import discord.js (v14)
-const { Client, GatewayIntentBits } = require('discord.js');
+const ytdl = require("@distube/ytdl-core");
 
-// Create a new client instance
-const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.GuildMembers,
-        GatewayIntentBits.MessageContent // Required to read message content
-    ]
-});
+/**
+ * Function to get streamable or downloadable links for a YouTube video.
+ * @param {string} videoUrl - The URL of the YouTube video.
+ * @returns {Promise<{videoUrl: string, audioUrl: string}>} - An object containing video and audio download URLs.
+ */
+async function getDownloadLinks(videoUrl) {
+  // Validate YouTube URL
+  const videoID = extractVideoID(videoUrl);
+  if (!videoID) {
+    throw new Error("Invalid YouTube URL");
+  }
 
-// Login to Discord
-client.login('MTI3OTg0ODgxOTgxMDM3Mzc4NA.GNLxI6.GuvdJA9ioxj-vL6m-1WzZOv-hnpZsfITsltTpY'); // Replace with your bot token
+  try {
+    const videoInfo = await ytdl.getInfo(videoID);
+    
+    // Choose the best video and audio formats
+    const videoFormat = ytdl.chooseFormat(videoInfo.formats, { quality: "highestvideo" });
+    const audioFormat = ytdl.chooseFormat(videoInfo.formats, { quality: "highestaudio" });
 
-// Listen for messages
-client.on('messageCreate', async (message) => {
-    // Make sure it's not a bot sending the message
-    if (message.author.bot) return;
+    // Generate the URLs
+    const videoUrlResult = videoFormat.url;
+    const audioUrlResult = audioFormat.url;
 
-    // Command to create a tag and assign it to a user
-    if (message.content.startsWith('!createguildtag')) {
-        const args = message.content.split(' ');
-        const member = message.mentions.members.first(); // The mentioned user
-        const roleName = args.slice(2).join(' '); // The role (tag) name after the mention
+    return {
+      videoUrl: videoUrlResult,
+      audioUrl: audioUrlResult,
+    };
+  } catch (error) {
+    console.error("Error fetching download links:", error);
+    throw error;
+  }
+}
 
-        // Error handling for missing arguments
-        if (!member || !roleName) {
-            return message.channel.send('Usage: !createguildtag @user TagName');
-        }
+/**
+ * Helper function to extract the video ID from a YouTube URL.
+ * @param {string} url - The YouTube URL.
+ * @returns {string|null} - The video ID or null if not found.
+ */
+function extractVideoID(url) {
+  const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+  const matches = url.match(regex);
+  return matches ? matches[1] : null;
+}
 
-        try {
-            // Check if the role already exists
-            let role = message.guild.roles.cache.find(r => r.name === roleName);
-            
-            // If the role doesn't exist, create it
-            if (!role) {
-                role = await message.guild.roles.create({
-                    name: roleName,
-                    color: '#3498db', // Set role color
-                    reason: 'Custom guild tag creation'
-                });
-                message.channel.send(`Tag ${role.name} created successfully!`);
-            }
+// Testing the getDownloadLinks function
+(async () => {
+  const videoUrl = "https://www.youtube.com/watch?v=JM7EPuZuRV8"; // Replace with your video URL
+  try {
+    const links = await getDownloadLinks(videoUrl);
+    
+    console.log(`Video URL: ${links.videoUrl}`);
+    console.log(`Audio URL: ${links.audioUrl}`);
+  } catch (error) {
+    console.error("Failed to get download links:", error);
+  }
+})();
 
-            // Assign the created or existing role to the mentioned user
-            await member.roles.add(role);
-            message.channel.send(`${role.name} tag assigned to ${member.displayName}!`);
-
-        } catch (error) {
-            console.error('Error creating or assigning tag:', error);
-            message.channel.send('There was an error creating or assigning the tag.');
-        }
-    }
-});
-
-// Log when the bot is ready
-client.once('ready', () => {
-    console.log(`Logged in as ${client.user.tag}`);
-});
+module.exports = { getDownloadLinks };
