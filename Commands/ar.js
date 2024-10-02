@@ -37,7 +37,7 @@ const isNotModerator = async (msg) => {
 // Function to reset the response count every minute
 const resetResponseCount = () => {
     responseCount = 0;
-    console.log('Response count reset');
+   // console.log('Response count reset');
 };
 
 // Set an interval to reset the response count every minute (60,000 milliseconds)
