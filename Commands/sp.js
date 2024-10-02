@@ -5,7 +5,8 @@ if (fs.existsSync('config.json')) {
     config = JSON.parse(fs.readFileSync('config.json'));
 }
 
-let intervalId; // to store the interval
+let intervalId; // to store the interval for sending messages
+let typingIntervalId; // to store the interval for typing
 
 module.exports = {
     description: 'Send words at a set interval and interact with Dank Memer buttons if replied to',
@@ -18,13 +19,14 @@ module.exports = {
             if (command === 'sp') {
                 if (args[0] === 'stop') {
                     clearInterval(intervalId);
+                    clearInterval(typingIntervalId);
                     return;
                 }
 
                 const wordArgs = args.filter(arg => !arg.startsWith('inv:')).join(' ');
                 let words = wordArgs.split(',').map(word => word.trim());
 
-                let interval = 20000; // Default interval
+                let interval = 20000; // Default interval for sending messages
 
                 const invArg = args.find(arg => arg.startsWith('inv:'));
                 if (invArg) {
@@ -36,7 +38,16 @@ module.exports = {
                 if (intervalId) {
                     clearInterval(intervalId);
                 }
+                if (typingIntervalId) {
+                    clearInterval(typingIntervalId);
+                }
 
+                // Typing indicator every 15 seconds, independent of the message sending interval
+                typingIntervalId = setInterval(() => {
+                    message.channel.sendTyping();
+                }, 15000);
+
+                // Sending messages at the specified interval
                 intervalId = setInterval(async () => {
                     if (words[i]) {
                         const sentMessage = await message.channel.send(words[i]);
@@ -67,11 +78,8 @@ module.exports = {
                             }
                         });
                         
-                        
-
                         collector.on('end', (collected) => {
                             if (collected.size === 0) {
-                                //console.error('No reply from Dank Memer.');
                                 let a = 10;
                             }
                         });

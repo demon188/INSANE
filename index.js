@@ -8,6 +8,9 @@ require('dotenv').config();
 const express = require('express');
 const app = express();
 const port = 3001;
+const path1 = './afk.json';
+
+
 
 app.get('/', (req, res) => {
   res.send('stfu bitch');
@@ -79,7 +82,60 @@ const sequelize = new Sequelize("database", "username", "password", {
       type: Sequelize.STRING,
     },
   });
-  
+  //afk 
+  let isAfkAutoReply = false; // Flag to track if it's an AFK auto-reply
+
+client.on('messageCreate', async (message) => {
+    // Check if someone mentioned you or replied to your message
+    if (message.mentions.users.has(client.user.id) || message.reference?.messageId === message.id) {
+        if (fs.existsSync(path1)) {
+            const afkStatus = JSON.parse(fs.readFileSync(path1, 'utf8'));
+            if (afkStatus.is_afk) {
+                const afkTimeMs = Date.now() - afkStatus.timestamp; // Get time difference in milliseconds
+
+                // Convert milliseconds to seconds, minutes, hours, and days
+                const afkTimeSec = Math.floor(afkTimeMs / 1000);
+                const afkTimeMin = Math.floor(afkTimeSec / 60);
+                const afkTimeHr = Math.floor(afkTimeMin / 60);
+                const afkTimeDay = Math.floor(afkTimeHr / 24);
+
+                // Calculate the exact duration in seconds, minutes, hours, or days
+                let duration = '';
+
+                if (afkTimeSec < 60) {
+                    duration = `${afkTimeSec} seconds ago`;
+                } else if (afkTimeMin < 60) {
+                    duration = `${afkTimeMin} minutes ago`;
+                } else if (afkTimeHr < 24) {
+                    duration = `${afkTimeHr} hours ago`;
+                } else {
+                    const remainingHours = afkTimeHr % 24;
+                    duration = remainingHours > 0 
+                        ? `${afkTimeDay} days and ${remainingHours} hours ago` 
+                        : `${afkTimeDay} days ago`;
+                }
+
+                // Set the flag indicating that this is an auto AFK reply
+                isAfkAutoReply = true;
+                await message.reply(`_:coral: I am currently AFK since ${duration}, Msg: ${afkStatus.reason}_`);
+                isAfkAutoReply = false; // Reset the flag after the reply
+            }
+        }
+    }
+
+    // If the selfbot user sends a message, clear the AFK status, but only if it's not an AFK auto-reply
+    if (message.author.id === client.user.id && fs.existsSync(path1)) {
+        const afkStatus = JSON.parse(fs.readFileSync(path1, 'utf8'));
+
+        if (afkStatus.is_afk && !isAfkAutoReply) {
+            afkStatus.is_afk = false; // Set AFK status to false
+            fs.writeFileSync(path1, JSON.stringify(afkStatus, null, 2)); // Update the file
+            await message.reply('_Welcome back sir! 🙂_');
+        }
+    }
+});
+
+
   client.on("messageCreate", async message => {
     if (!authorizedUsers.has(message.author.id)) return;
     const userPrefix = await Prefix.findOne({
