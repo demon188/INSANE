@@ -137,7 +137,45 @@ const sequelize = new Sequelize("database", "username", "password", {
      }
  });
  
+ //reaction
+
  
+ const reactpath = './react.json';
+ 
+ client.on("messageCreate", async message => {
+     if (message.author.id !== client.user.id) return;
+ 
+     if (!fs.existsSync(reactpath)) {
+         // Create react.json if it doesn't exist with default values
+         fs.writeFileSync(reactpath, JSON.stringify({ emojis: [], loop: false }, null, 2));
+     }
+ 
+     // Read and parse react.json
+     let reactData;
+     try {
+         reactData = JSON.parse(fs.readFileSync(reactpath, 'utf8'));
+     } catch (error) {
+         console.error("Error reading react.json:", error);
+         return;
+     }
+ 
+     if (reactData.emojis && Array.isArray(reactData.emojis)) {
+         for (const emoji of reactData.emojis) {
+             try {
+                 await message.react(emoji);
+             } catch (error) {
+                 console.error(`Failed to react with emoji ${emoji}:`, error);
+             }
+         }
+ 
+         if (!reactData.loop) {
+             delete reactData.emojis;
+             fs.writeFileSync(reactpath, JSON.stringify(reactData, null, 2));
+         }
+     }
+ });
+ 
+
 
 
 
