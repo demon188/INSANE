@@ -1,4 +1,8 @@
-const { Streamer, streamLivestreamVideo } = require('@dank074/discord-video-stream');
+//const { Streamer, streamLivestreamVideo } = require('@dank074/discord-video-stream');
+(async () => {
+    const { Streamer, streamLivestreamVideo } = await import('@dank074/discord-video-stream');
+
+    //console.log('Streamer:', Streamer);
 
 let activeStreamer = null;  // Keep track of the active VideoStreamer instance
 
@@ -109,3 +113,4 @@ module.exports = {
         }
     }
 };
+})();
