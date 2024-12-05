@@ -8,7 +8,7 @@ module.exports = {
         let input = handler.join(" ");
         
         // Extract emojis and check for loop flag (-l:true)
-        const emojiPattern = /([\p{Emoji_Presentation}|\p{Emoji}|\p{Extended_Pictographic}]+)/gu;
+        const emojiPattern = /<a?:\w+:\d+>|[\p{Emoji_Presentation}\p{Emoji}\p{Extended_Pictographic}]/gu;
         const emojis = input.match(emojiPattern) || [];
         const loop = input.includes("-l:true");
 

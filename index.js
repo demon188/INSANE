@@ -136,7 +136,65 @@ const sequelize = new Sequelize("database", "username", "password", {
          }
      }
  });
- 
+ //sreaction
+ const ssrctPath = './srct.json';
+
+client.on("messageCreate", async message => {
+  if (message.content.includes("srct stop")) {
+    console.log("Command 'srct stop' detected. Ignoring further processing.");
+    return; // Exit the function
+}  
+  
+  // Ensure srct.json exists
+    if (!fs.existsSync(ssrctPath)) {
+        // Create srct.json if it doesn't exist with default values
+        fs.writeFileSync(ssrctPath, JSON.stringify({ serverId: null, emojis: [], count: 0 }, null, 2));
+    }
+
+    // Read and parse srct.json
+    let srctData;
+    try {
+        srctData = JSON.parse(fs.readFileSync(ssrctPath, 'utf8'));
+    } catch (error) {
+        console.error("Error reading srct.json:", error);
+        return;
+    }
+
+    // Check if the JSON is cleared (stop command issued)
+    if (!srctData.serverId || srctData.emojis.length === 0 || srctData.count <= 0) {
+        return; // Do nothing if parameters are cleared or count is 0
+    }
+
+    // Check if serverId matches and count is greater than 0
+    if (message.guild.id !== srctData.serverId) {
+        return; // Skip reacting if the server ID does not match
+    }
+
+    if (srctData.emojis && Array.isArray(srctData.emojis)) {
+        for (const emoji of srctData.emojis) {
+            try {
+                await message.react(emoji);
+            } catch (error) {
+                console.error(`Failed to react with emoji ${emoji}:`, error);
+            }
+        }
+
+        // Decrement the reaction count
+        srctData.count -= 1;
+
+        // If the count reaches 0, clear the JSON file to stop further reactions
+        if (srctData.count <= 0) {
+            srctData.serverId = null;
+            srctData.emojis = [];
+            srctData.count = 0;
+        }
+
+        // Update srct.json
+        fs.writeFileSync(ssrctPath, JSON.stringify(srctData, null, 2));
+      //  console.log(`Reactions remaining: ${srctData.count}`);
+    }
+});
+
  //reaction
 
  
