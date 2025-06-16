@@ -62,15 +62,23 @@ module.exports = {
 
         // Filter messages
         const messageArray = Array.from(messages.values())
-            .filter(msg => {
-                const member = guild.members.cache.get(msg.author.id);
-                const isMod = member?.permissions?.has("MANAGE_MESSAGES");
-                const isBot = msg.author.bot;
-
-                return !isBot && !isMod && typeof msg.content === "string" && msg.content.length > 3 && msg.content.length <= 200;
-            })
-            .sort((a, b) => a.createdTimestamp - b.createdTimestamp)
-            .slice(0, 50);
+        .filter(msg => {
+            const member = guild.members.cache.get(msg.author.id);
+            const isMod = member?.permissions?.has("MANAGE_MESSAGES");
+            const isBot = msg.author.bot;
+            const hasMention = msg.mentions.users.size > 0;
+    
+            return (
+                !isBot &&
+                !isMod &&
+                typeof msg.content === "string" &&
+                msg.content.length > 3 &&
+                msg.content.length < 28 && // ✅ Less than 28 characters
+                !hasMention                // ✅ No user mentions
+            );
+        })
+        .sort((a, b) => a.createdTimestamp - b.createdTimestamp)
+        .slice(0, 50);
 
         if (messageArray.length === 0) {
             // console.log("⚠️ No valid messages found to farm.");
