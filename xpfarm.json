@@ -1,3 +1,6 @@
 {
-  "running": false
+  "running": true,
+  "serverId": "394854570926407682",
+  "channelId": "1114154226747179040",
+  "interval": 20
 }
