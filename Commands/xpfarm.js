@@ -48,6 +48,7 @@ module.exports = {
                         const isMod = member?.permissions?.has("MANAGE_MESSAGES");
                         const isBot = msg.author.bot;
                         const hasMention = msg.mentions.users.size > 0;
+                        const isEnglish = /^[\p{ASCII}\p{Emoji}\s]+$/u.test(msg.content);
 
                         return (
                             !isBot &&
@@ -55,7 +56,8 @@ module.exports = {
                             typeof msg.content === "string" &&
                             msg.content.length > 3 &&
                             msg.content.length < 28 &&
-                            !hasMention
+                            !hasMention &&
+                            isEnglish
                         );
                     })
                     .sort((a, b) => a.createdTimestamp - b.createdTimestamp)
