@@ -14,6 +14,7 @@ module.exports = {
                 clearInterval(farmInterval);
                 farmInterval = null;
                 fs.writeFileSync(path, JSON.stringify({ running: false }, null, 2));
+                message.delete();
                 return;
             } else {
                 return;
@@ -35,6 +36,7 @@ module.exports = {
         const channel = guild?.channels.cache.get(channelId);
 
         if (!guild || !channel || channel.type !== "GUILD_TEXT") return;
+        message.reply('xp hunt starting....');
 
         const emojiRegex = /<a?:\w+:\d+>/g;
 
@@ -48,6 +50,8 @@ module.exports = {
                         const isMod = member?.permissions?.has("MANAGE_MESSAGES");
                         const isBot = msg.author.bot;
                         const hasMention = msg.mentions.users.size > 0;
+
+                        const isOnlyEmoji = msg.content.replace(emojiRegex, '').trim().length === 0;
                         const isEnglish = /^[\p{ASCII}\p{Emoji}\s]+$/u.test(msg.content);
 
                         return (
@@ -57,6 +61,7 @@ module.exports = {
                             msg.content.length > 3 &&
                             msg.content.length < 28 &&
                             !hasMention &&
+                            !isOnlyEmoji &&         // ❌ Skip messages that are only server emoji
                             isEnglish
                         );
                     })
@@ -68,7 +73,6 @@ module.exports = {
         };
 
         let messageArray = await fetchAndFilterMessages();
-
         if (messageArray.length === 0) return;
 
         // Save config
@@ -82,22 +86,38 @@ module.exports = {
 
         let currentIndex = 0;
         let sentCount = 0;
+        let lastMessages = [];  // Store last 10 messages sent
 
         farmInterval = setInterval(async () => {
             if (!messageArray.length) return;
 
-            if (!messageArray[currentIndex]) currentIndex = 0;
+            // Find next valid message
+            let validMessageFound = false;
+            let attempts = 0;
 
-            let msgContent = messageArray[currentIndex].content;
+            while (!validMessageFound && attempts < messageArray.length) {
+                if (!messageArray[currentIndex]) currentIndex = 0;
 
-            // Replace server emojis
-            if (emojiRegex.test(msgContent)) {
-                msgContent = msgContent.replace(emojiRegex, '.');
+                let msgContent = messageArray[currentIndex].content;
+
+                // Replace server emojis with "." or remove
+                msgContent = msgContent.replace(emojiRegex, '.').trim();
+
+                // Skip if recently sent
+                if (!lastMessages.includes(msgContent) && msgContent.length > 0) {
+                    validMessageFound = true;
+
+                    // Send the message
+                    channel.send(msgContent).catch(() => {});
+                    lastMessages.push(msgContent);
+                    if (lastMessages.length > 10) lastMessages.shift(); // Keep only last 10
+
+                    sentCount++;
+                }
+
+                currentIndex++;
+                attempts++;
             }
-
-            channel.send(msgContent).catch(() => {});
-            currentIndex++;
-            sentCount++;
 
             // Refresh after every 10 sends
             if (sentCount % 10 === 0) {
