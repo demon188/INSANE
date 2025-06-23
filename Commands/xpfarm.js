@@ -1,5 +1,4 @@
 const fs = require("fs");
-const { PermissionsBitField, ChannelType } = require("discord.js");
 const path = './xpfarm.json';
 
 let farmInterval = null;
@@ -15,9 +14,11 @@ module.exports = {
                 clearInterval(farmInterval);
                 farmInterval = null;
                 fs.writeFileSync(path, JSON.stringify({ running: false }, null, 2));
-                message.delete().catch(() => {});
+                message.delete();
+                return;
+            } else {
+                return;
             }
-            return;
         }
 
         // Parse options
@@ -34,8 +35,8 @@ module.exports = {
         const guild = client.guilds.cache.get(serverId);
         const channel = guild?.channels.cache.get(channelId);
 
-        if (!guild || !channel || channel.type !== ChannelType.GuildText) return;
-        message.reply('📡 XP farming started...');
+        if (!guild || !channel || channel.type !== "GUILD_TEXT") return;
+        message.reply('xp hunt starting....');
 
         const emojiRegex = /<a?:\w+:\d+>/g;
         const streetRegex = /\b(street|road|lane|avenue|drive|blvd|way|cross)\b/i;
@@ -44,19 +45,17 @@ module.exports = {
 
         const fetchAndFilterMessages = async () => {
             try {
-                const messages = await channel.messages.fetch({ limit: 100 });
+                const newMessages = await channel.messages.fetch({ limit: 100 });
 
-                return messages
+                return Array.from(newMessages.values())
                     .filter(msg => {
                         const member = guild.members.cache.get(msg.author.id);
-                        const isMod = member?.permissions?.has(PermissionsBitField.Flags.ManageMessages);
+                        const isMod = member?.permissions?.has("MANAGE_MESSAGES");
                         const isBot = msg.author.bot;
                         const hasMention = msg.mentions.users.size > 0;
 
-                        const content = msg.content;
-                        const isOnlyEmoji = content.replace(emojiRegex, '').trim().length === 0;
-                        const isEnglish = /^[\p{ASCII}\p{Emoji}\s]+$/u.test(content);
-
+                        const isOnlyEmoji = msg.content.replace(emojiRegex, '').trim().length === 0;
+                        const isEnglish = /^[\p{ASCII}\p{Emoji}\s]+$/u.test(msg.content);
                         const hasStreet = streetRegex.test(content);
                         const hasGger = ggerWordRegex.test(content);
                         const hasLongNumber = longNumberRegex.test(content);
@@ -78,7 +77,6 @@ module.exports = {
                     .sort((a, b) => a.createdTimestamp - b.createdTimestamp)
                     .slice(0, 50);
             } catch (err) {
-                console.error("Failed to fetch messages:", err.message);
                 return [];
             }
         };
@@ -86,6 +84,7 @@ module.exports = {
         let messageArray = await fetchAndFilterMessages();
         if (messageArray.length === 0) return;
 
+        // Save config
         const farmConfig = {
             running: true,
             serverId,
@@ -96,11 +95,12 @@ module.exports = {
 
         let currentIndex = 0;
         let sentCount = 0;
-        let lastMessages = [];
+        let lastMessages = [];  // Store last 10 messages sent
 
         farmInterval = setInterval(async () => {
             if (!messageArray.length) return;
 
+            // Find next valid message
             let validMessageFound = false;
             let attempts = 0;
 
@@ -108,13 +108,19 @@ module.exports = {
                 if (!messageArray[currentIndex]) currentIndex = 0;
 
                 let msgContent = messageArray[currentIndex].content;
+
+                // Replace server emojis with "." or remove
                 msgContent = msgContent.replace(emojiRegex, '.').trim();
 
+                // Skip if recently sent
                 if (!lastMessages.includes(msgContent) && msgContent.length > 0) {
                     validMessageFound = true;
+
+                    // Send the message
                     channel.send(msgContent).catch(() => {});
                     lastMessages.push(msgContent);
-                    if (lastMessages.length > 10) lastMessages.shift();
+                    if (lastMessages.length > 10) lastMessages.shift(); // Keep only last 10
+
                     sentCount++;
                 }
 
@@ -122,6 +128,7 @@ module.exports = {
                 attempts++;
             }
 
+            // Refresh after every 10 sends
             if (sentCount % 10 === 0) {
                 const updatedMessages = await fetchAndFilterMessages();
                 if (updatedMessages.length) {
