@@ -7,7 +7,7 @@ const Sequelize = require('sequelize');
 require('dotenv').config();
 const express = require('express');
 const app = express();
-const port = 3001;
+const port = 8080;
 const path1 = './afk.json';
 
 
