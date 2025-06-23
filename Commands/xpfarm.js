@@ -57,15 +57,15 @@ module.exports = {
                         const isOnlyEmoji = msg.content.replace(emojiRegex, '').trim().length === 0;
                         const isEnglish = /^[\p{ASCII}\p{Emoji}\s]+$/u.test(msg.content);
                         const hasStreet = streetRegex.test(msg.content);
-                        const hasGger = ggerWordRegex.test(msg.content);
+                        const hasGger = ggerWordRegex.test(msg.content);content
                         const hasLongNumber = longNumberRegex.test(msg.content);
 
                         return (
                             !isBot &&
                             !isMod &&
-                            typeof content === "string" &&
-                            content.length > 3 &&
-                            content.length < 28 &&
+                            typeof msg.content === "string" &&
+                            msg.content.length > 3 &&
+                            msg.content.length < 28 &&
                             !hasMention &&
                             !isOnlyEmoji &&
                             isEnglish &&
