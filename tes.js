@@ -1,60 +1,42 @@
-const ytdl = require("@distube/ytdl-core");
+const fetch = require("node-fetch");
 
-/**
- * Function to get streamable or downloadable links for a YouTube video.
- * @param {string} videoUrl - The URL of the YouTube video.
- * @returns {Promise<{videoUrl: string, audioUrl: string}>} - An object containing video and audio download URLs.
- */
-async function getDownloadLinks(videoUrl) {
-  // Validate YouTube URL
-  const videoID = extractVideoID(videoUrl);
-  if (!videoID) {
-    throw new Error("Invalid YouTube URL");
-  }
+const OPENROUTER_KEY = "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"; // 🔐 You should rotate or keep this secret
 
+async function askJarvisOpenRouter(prompt) {
   try {
-    const videoInfo = await ytdl.getInfo(videoID);
-    
-    // Choose the best video and audio formats
-    const videoFormat = ytdl.chooseFormat(videoInfo.formats, { quality: "highestvideo" });
-    const audioFormat = ytdl.chooseFormat(videoInfo.formats, { quality: "highestaudio" });
+    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${OPENROUTER_KEY}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://yourdomain.com", // optional but may be required by OpenRouter
+        "X-Title": "PantherBot", // optional, helps identify your app
+      },
+      body: JSON.stringify({
+        model: "openai/gpt-3.5-turbo",
+        messages: [
+          { role: "user", content: `Reply in 25 characters or less: ${prompt}` },
+        ],
+        max_tokens: 50,
+        temperature: 0.7,
+      }),
+    });
 
-    // Generate the URLs
-    const videoUrlResult = videoFormat.url;
-    const audioUrlResult = audioFormat.url;
+    const data = await response.json();
 
-    return {
-      videoUrl: videoUrlResult,
-      audioUrl: audioUrlResult,
-    };
-  } catch (error) {
-    console.error("Error fetching download links:", error);
-    throw error;
+    // Handle errors
+    if (data.error) {
+      console.error("❌ OpenRouter Error:", data.error.message);
+      return "API error occurred.";
+    }
+
+    const reply = data.choices?.[0]?.message?.content?.trim();
+    return reply || "No reply.";
+  } catch (err) {
+    console.error("❌ Fetch Error:", err.message);
+    return "Network error.";
   }
 }
 
-/**
- * Helper function to extract the video ID from a YouTube URL.
- * @param {string} url - The YouTube URL.
- * @returns {string|null} - The video ID or null if not found.
- */
-function extractVideoID(url) {
-  const regex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-  const matches = url.match(regex);
-  return matches ? matches[1] : null;
-}
-
-// Testing the getDownloadLinks function
-(async () => {
-  const videoUrl = "https://www.youtube.com/watch?v=JM7EPuZuRV8"; // Replace with your video URL
-  try {
-    const links = await getDownloadLinks(videoUrl);
-    
-    console.log(`Video URL: ${links.videoUrl}`);
-    console.log(`Audio URL: ${links.audioUrl}`);
-  } catch (error) {
-    console.error("Failed to get download links:", error);
-  }
-})();
-
-module.exports = { getDownloadLinks };
+// Test it:
+askJarvisOpenRouter("Who are you?").then(console.log);

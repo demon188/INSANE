@@ -6,6 +6,7 @@ const { Appembed } = require('kyz');
 const Sequelize = require('sequelize');
 require('dotenv').config();
 const express = require('express');
+const giveawayJoiner = require("./Commands/giveawayJoiner")
 const app = express();
 const port = 8080;
 const path1 = './afk.json';
@@ -88,6 +89,7 @@ const sequelize = new Sequelize("database", "username", "password", {
  let isAfkAutoReply = false; // Flag to track if it's an AFK auto-reply
 
  client.on('messageCreate', async (message) => {
+   giveawayJoiner.run(client, message);
      // Check if someone mentioned you or replied to your message
      if (message.mentions.users.has(client.user.id) || message.reference?.messageId === message.id) {
          if (fs.existsSync(path1)) {
